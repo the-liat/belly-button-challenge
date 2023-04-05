@@ -1,6 +1,6 @@
-/*-------------------------------------------------------
-             Reading the belly button data
--------------------------------------------------------*/
+/*------------------------------------------------------------
+Reading the belly button data and Creating/Updating the Page
+-------------------------------------------------------------*/
 const url = "https://2u-data-curriculum-team.s3.amazonaws.com/dataviz-classroom/v1.1/14-Interactive-Web-Visualizations/02-Homework/samples.json";
 
 // initiating a new object that will include all data per subject
@@ -10,13 +10,13 @@ let organizedData = {};
 const dataPromise = d3.json(url);
 console.log("Data Promise: ", dataPromise);
 
-// Fetch the JSON data and create/ update page
+// Fetch the JSON data and create/ update page - from here all functions will be called (functions are nested)
 d3.json(url).then(function(data) {
-  console.log(data);
-  createDropdown(data);
-  processData(data); 
-  d3.select("#sample-metadata").append("ul"); //this will add a list element to the meta data element
-  d3.select("#sample-metadata").select("ul").style("list-style-type", "none"); // Use CSS to remove bullet points
+  console.log(data); // Verifying data
+  createDropdown(data); //initializing the drop down menu
+  processData(data); //reorgenizing all the data by subject
+  d3.select("#sample-metadata").append("ul"); //this will add a list element to the meta data element on the page
+  d3.select("#sample-metadata").select("ul").style("list-style-type", "none").style("padding", 0); // Use CSS to remove bullet points for the meta data list
   updatePage("940"); // this will initialize the page wth the first subject
 }); 
 
@@ -70,7 +70,7 @@ function selectTopTen(subjectData) {
 }
 
 // function to set bar chart elements
-function barChart(barData) { // he barData array contains the samples values, otu ids, otu labels
+function barChart(barData) { // the barData array contains the samples values, otu ids, otu labels
     let plotData = [{
         y: barData[1],
         x: barData[0],
@@ -79,9 +79,9 @@ function barChart(barData) { // he barData array contains the samples values, ot
         text: barData[2],
         name: barData[2],
         marker: {
-            color: 'rgba(54, 162, 235, 0.7)', 
+            color: 'rgba(211, 84, 0, 0.8)', 
             line: {
-                color: 'rgba(54, 162, 235, 1)', 
+                color: 'rgba(243, 156, 18, 1)', 
                 width: 1
             }
         }
@@ -138,7 +138,39 @@ function metaData(subjectData) {
 /*------------------------------------------------------------------------------------
     gauge chart
 ------------------------------------------------------------------------------------*/
-
+// function to set bubble chart elements
+function gaugeChart(subjectData) {
+    let wfreq = subjectData.wfreq; // getting washing frequency value
+    // Defining chart data
+    var plotData = [{
+        domain: { x: [0, 1], y: [0, 1] },
+        value: wfreq,
+        title: { text: "Belly Button Washing Frequency: Scrubs Per Week" },
+        type: "indicator",
+        mode: "gauge+number",
+        delta: { reference: 400 },
+        gauge: { 
+            axis: { range: [0, 9] }, 
+            bar: { color: 'rgba(139, 64, 0, 1)' },
+            steps: [
+                {range: [0, 1], color: 'rgba(255, 222, 173, 1)' },  
+                { range: [1, 2], color: 'rgba(255, 229, 180, 1)' },
+                { range: [2, 3], color: 'rgba(250, 200, 152, 1)' },
+                { range: [3, 4], color: 'rgba(255, 165, 0, 1)' },
+                { range: [4, 5], color: 'rgba(255, 117, 24, 1)' },
+                { range: [5, 6], color: 'rgba(255, 95, 21, 1)' },
+                { range: [6, 7], color: 'rgba(236, 88, 0, 1)' },
+                { range: [7, 8], color: 'rgba(227, 83, 53, 1)' },
+                { range: [8, 9], color: 'rgba(204, 119, 34, 1)' }
+          ]}
+      }];
+    let layout = {
+        width: 600, 
+        height: 500, 
+        margin: { t: 0, b: 0 }
+      };
+    Plotly.newPlot("gauge", plotData, layout);
+}
 
 /*------------------------------------------------------------------------------------
        Update page 
@@ -151,6 +183,8 @@ function updatePage(selectedValue) {
     bubbleChart(subjectData.samplesData);
     // metadata 
     metaData(subjectData.metadata);
+    //Gauge chart
+    gaugeChart(subjectData.metadata);
 };
 
 
