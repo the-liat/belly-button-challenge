@@ -15,7 +15,9 @@ d3.json(url).then(function(data) {
   console.log(data);
   createDropdown(data);
   processData(data); 
-  createDashboard(); // this will use the global var organizedData
+  d3.select("#sample-metadata").append("ul"); //this will add a list element to the meta data element
+  d3.select("#sample-metadata").select("ul").style("list-style-type", "none"); // Use CSS to remove bullet points
+  updatePage("940"); // this will initialize the page wth the first subject
 }); 
 
 /*-------------------------------------------------------
@@ -37,7 +39,6 @@ function createDropdown(data) {
 function optionChanged() {
     let selectedValue = d3.select("#selDataset").property("value");
     selectedValue = selectedValue.toString()
-    console.log("Selected value: " + selectedValue);
     updatePage(selectedValue);
 }
 
@@ -50,7 +51,7 @@ function processData(data) {
         let subjectID = data.names[i];
         let metadata = data.metadata[i];
         let samplesData = data.samples[i];
-        organizedData[subjectID] = Object.assign({}, metadata, samplesData);
+        organizedData[subjectID] = {"metadata": metadata, "samplesData": samplesData};
     };
 }
   
@@ -85,47 +86,72 @@ function barChart(barData) { // he barData array contains the samples values, ot
             }
         }
     }];
-    console.log(plotData) // printing to console to verify data
-    return plotData;
+    Plotly.newPlot("bar", plotData);
 };
 
 /*------------------------------------------------------------------------------------
     bubble chart
 ------------------------------------------------------------------------------------*/
+// function to set bubble chart elements
+function bubbleChart(subjectData) {
+    // Setting data arrays
+    let xValues = subjectData.otu_ids; // use x Values also for marker colors
+    let yValues = subjectData.sample_values; // use y values also for marker size
+    let textValues = subjectData.otu_labels;
+    // Defining chart data
+    var plotData = [{
+        x: xValues,
+        y: yValues,
+        text: textValues,
+        mode: 'markers',
+        marker: {
+          color: xValues,
+          size: yValues
+        }
+      }];
+    let layout = {
+        xaxis: {
+            title: 'OTU ID'
+          },
+        showlegend: false,
+        height: 600,
+        width: 1200
+      };
+    Plotly.newPlot("bubble", plotData, layout);
+}
 
 /*------------------------------------------------------------------------------------
     metadata display
 ------------------------------------------------------------------------------------*/
+function metaData(subjectData) {
+    // Removing all list items from the html element with the ID "sample-metadata"
+    d3.select("#sample-metadata").selectAll("li").remove();
+    // Creating an array of the list items 
+    let displayItems = Object.entries(subjectData).map(([key, value]) => `${key}: ${value}`);
+    // Add items to the <ul> element
+    for (let i=0; i < displayItems.length; i++) {
+        let ul = d3.select("#sample-metadata").select("ul")
+        ul.append("li").text(displayItems[i]);
+    };
+}
 
 /*------------------------------------------------------------------------------------
     gauge chart
 ------------------------------------------------------------------------------------*/
 
 
-/*-------------------------------------------------------
-    Initiate first dashboard (selecting first subject)
--------------------------------------------------------*/
-function createDashboard() {
-    let subjectData  = organizedData["940"];
-    // bar chart
-    let plotData = barChart(selectTopTen(subjectData)); 
-    Plotly.newPlot("bar", plotData);
-    // bubble chart
-    // metadata 
-}
- 
 /*------------------------------------------------------------------------------------
        Update page 
 ------------------------------------------------------------------------------------*/
 function updatePage(selectedValue) {
     let subjectData  = organizedData[selectedValue];
     // bar chart
-    let plotData = barChart(selectTopTen(subjectData));
-    Plotly.newPlot("bar", plotData);
-    //Plotly.restyle("bar", plotData);
+    barChart(selectTopTen(subjectData.samplesData));
     // bubble chart
+    bubbleChart(subjectData.samplesData);
     // metadata 
-}
+    metaData(subjectData.metadata);
+};
 
 
 
